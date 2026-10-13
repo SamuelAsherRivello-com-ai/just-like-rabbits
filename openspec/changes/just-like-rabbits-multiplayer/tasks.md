@@ -29,7 +29,7 @@
 
 ## 5. Shared game UX
 
-- [ ] 5.1 Connect the renderer and input adapter to the released shared client, rendering authoritative snapshots and reconciling pending plant feedback without local state authority; verify two local browser clients observe the same accepted plant, growth, rabbit, and eaten-carrot changes.
+- [x] 5.1 Connect the renderer and input adapter to the released shared client, rendering authoritative snapshots and reconciling pending plant feedback without local state authority; verify two local browser clients observe the same accepted plant, growth, rabbit, and eaten-carrot changes.
 - [x] 5.2 Add the always-readable HUD with title, planting instruction, live planted/mature counts, current scale, and five scale controls; verify UI tests and browser screenshots at desktop and portrait widths.
 - [ ] 5.3 Add visible connecting, connected, full, disconnected, expired-room, retry, and local-pause states; verify browser tests cover join, capacity, intentional disconnect, retry, and that local pause sends no actions or shared pause.
 - [x] 5.4 Document local setup, run commands, controls, multiplayer capacity/recovery and Vercel duration limits, asset sources/replacement, browser requirements, and screenshots; verify README commands run in a clean checkout.
