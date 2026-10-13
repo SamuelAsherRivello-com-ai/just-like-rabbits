@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="32" viewBox="0 0 96 32">
+  <g id="idle"><rect width="32" height="32" fill="none"/><ellipse cx="16" cy="20" rx="10" ry="7" fill="#f7eddf"/><rect x="10" y="3" width="4" height="14" rx="2" fill="#fff9ef"/><rect x="19" y="3" width="4" height="14" rx="2" fill="#fff9ef"/><circle cx="21" cy="18" r="1.5" fill="#49383c"/></g>
+  <g transform="translate(32)"><rect width="32" height="32" fill="none"/><ellipse cx="16" cy="16" rx="10" ry="7" fill="#f7eddf"/><rect x="10" y="0" width="4" height="14" rx="2" fill="#fff9ef"/><rect x="19" y="0" width="4" height="14" rx="2" fill="#fff9ef"/><circle cx="21" cy="14" r="1.5" fill="#49383c"/></g>
+  <g transform="translate(64)"><rect width="32" height="32" fill="none"/><ellipse cx="15" cy="20" rx="10" ry="7" fill="#d6ad83"/><rect x="9" y="4" width="4" height="14" rx="2" fill="#efd0aa"/><rect x="18" y="4" width="4" height="14" rx="2" fill="#efd0aa"/><circle cx="20" cy="18" r="1.5" fill="#49383c"/><rect x="24" y="21" width="4" height="7" fill="#f6872f"/></g>
+</svg>
