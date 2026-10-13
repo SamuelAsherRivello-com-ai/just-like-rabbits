@@ -2,6 +2,12 @@
 
 A bright, entirely 2D, straight-down rabbit habitat simulation. Plant carrots and watch two independent rabbits wander, hide, rest, and eat. There are no 3D models, perspective effects, angled floor tiles, or billboards.
 
+## Play online
+
+[Open Just Like Rabbits on Vercel](https://just-like-rabbits.vercel.app)
+
+The production build uses the shared `just-like-rabbits` multiplayer service at `https://rmc-colyseus-multiplayer-server.vercel.app`. The Vercel project retains its account deployment protection, so a Vercel-authorized browser is required while that project setting is enabled.
+
 ## Run locally
 
 Requires Node.js 24 or newer.
