@@ -25,4 +25,4 @@
 - [ ] 4.1 Release the compatible shared server and typed client through their existing workflow; record exact revisions, endpoint, and release version in the project evidence.
 - [x] 4.2 Run the source checker, strict typecheck, unit and integration suites, and production build; verify checks reject invalid disposable and orphan-source fixtures where the existing checker supports them.
 - [ ] 4.3 Validate the released Pages game in independent desktop and portrait sessions with two connected players; verify planting, every time scale, late join, capacity, disconnect, expiry, retry, assets, and clean consoles.
-- [ ] 4.4 Run a bounded 240-second shared-session probe and record results; do not promote the README demo if any release probe fails.
+- [x] 4.4 Run a bounded 240-second shared-session probe and record results; do not promote the README demo if any release probe fails.
