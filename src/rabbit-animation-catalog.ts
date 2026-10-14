@@ -6,7 +6,7 @@ export type RabbitAnimationName = typeof RABBIT_ANIMATION_NAMES[number];
 
 const sheet = (name: RabbitAnimationName, file: string, frameCount: number, frameDurationMs: number, loopCount = -1): SpriteAnimationDefinition => ({
   name,
-  source: { kind: "sheet", path: `/assets/rabbit/${file}`, cellWidthPx: 32, cellHeightPx: 32, columns: frameCount, rows: 1 },
+  source: { kind: "sheet", path: `${import.meta.env.BASE_URL}assets/rabbit/${file}`, cellWidthPx: 32, cellHeightPx: 32, columns: frameCount, rows: 1 },
   frameDurationMs,
   loopCount,
 });

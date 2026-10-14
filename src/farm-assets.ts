@@ -1,6 +1,6 @@
 export const FARM_TILE_SIZE = 32;
 export const PLANT_SOURCE_TILE_SIZE = 16;
-export const FARM_PLANTS_SHEET_PATH = "/assets/farm-plants.png";
+export const FARM_PLANTS_SHEET_PATH = `${import.meta.env.BASE_URL}assets/farm-plants.png`;
 export const FARM_PLANTS_SHEET_COLUMNS = 48;
 export const FARM_PLANTS_SHEET_ROWS = 27;
 
