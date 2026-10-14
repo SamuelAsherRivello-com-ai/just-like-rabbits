@@ -10,7 +10,7 @@
 ## 2. Authoritative browser client
 
 - [x] 2.1 Adapt the Canvas client to render authoritative snapshots and send only validated intent; verify two browser sessions observe the same plant, growth, rabbit-eating, and scale-change state.
-- [ ] 2.2 Implement visible connecting, connected, full-room, disconnected, expired-room, retry, and local-input-pause feedback; verify focused UI tests and browser checks keep the map and HUD visible.
+- [x] 2.2 Implement visible connecting, connected, full-room, disconnected, expired-room, retry, and local-input-pause feedback; verify focused UI tests and browser checks keep the map and HUD visible.
 - [x] 2.3 Expand deterministic simulation and animation tests for `0.5x`, `1x`, `2x`, `4x`, and `10x`; verify growth, rabbit cadence, animation timing, and day/night tint continue from current elapsed time.
 - [ ] 2.4 Capture browser evidence for idle, movement, and carrot-eating rabbit states with supplied art; verify no legacy-art request or console error occurs.
 
