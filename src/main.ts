@@ -78,7 +78,7 @@ function render(): void {
     return;
   }
   artStatus.textContent = "Supplied farm and rabbit artwork loaded";
-  drawFarmLayers(context, createFarmTiledMap(state.plots, state.cultivated), farmPlantsSheet, state.carrots);
+  drawFarmLayers(context, createFarmTiledMap(state.plots, state.cultivated ?? []), farmPlantsSheet, state.carrots ?? []);
   for (const [index, rabbit] of state.rabbits.entries()) drawRabbit(rabbit.x, rabbit.y, rabbit.state, index);
   const daylight = nightTintAlpha(state.elapsed);
   context.fillStyle = `rgba(20, 35, 78, ${daylight})`; context.fillRect(0, 0, canvas.width, canvas.height);
