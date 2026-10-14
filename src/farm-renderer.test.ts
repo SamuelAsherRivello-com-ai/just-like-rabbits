@@ -15,11 +15,11 @@ describe("farm renderer catalog", () => {
     expect(plantSourceRegion(groundSourceCellForGid(FARM_GROUND_GID.dirt)!)).toEqual({ sx: 288, sy: 352, size: 16 });
   });
 
-  it("maps both carrot lifecycle GIDs to their selected source regions", () => {
-    expect(plantSourceCellForGid(FARM_PLANT_GID.seedling)).toEqual(CARROT_PLANT_CELLS.seedling);
-    expect(plantSourceCellForGid(FARM_PLANT_GID.mature)).toEqual(CARROT_PLANT_CELLS.mature);
-    expect(plantSourceRegion(plantSourceCellForGid(FARM_PLANT_GID.seedling)!)).toEqual({ sx: 144, sy: 384, size: 16 });
-    expect(plantSourceRegion(plantSourceCellForGid(FARM_PLANT_GID.mature)!)).toEqual({ sx: 176, sy: 384, size: 16 });
+  it("maps all four carrot lifecycle GIDs to supplied source regions", () => {
+    expect(plantSourceCellForGid(FARM_PLANT_GID.stage0)).toEqual(CARROT_PLANT_CELLS.stage0);
+    expect(plantSourceCellForGid(FARM_PLANT_GID.stage3)).toEqual(CARROT_PLANT_CELLS.stage3);
+    expect(plantSourceRegion(plantSourceCellForGid(FARM_PLANT_GID.stage0)!)).toEqual({ sx: 144, sy: 384, size: 16 });
+    expect(plantSourceRegion(plantSourceCellForGid(FARM_PLANT_GID.stage3)!)).toEqual({ sx: 192, sy: 384, size: 16 });
     expect(plantSourceCellForGid(FARM_PLANT_GID.empty)).toBeUndefined();
   });
 });

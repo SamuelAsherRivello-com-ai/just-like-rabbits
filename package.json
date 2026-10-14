@@ -18,6 +18,6 @@
     "vitest": "^4.0.8"
   },
   "dependencies": {
-    "@rmc/multiplayer-client": "file:vendor/rmc-multiplayer-client-0.9.14.tgz"
+    "@rmc/multiplayer-client": "file:vendor/rmc-multiplayer-client-0.9.15.tgz"
   }
 }

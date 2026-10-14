@@ -5,8 +5,7 @@ describe("farm asset contract", () => {
   it("keeps carrots on a valid 16px source grid rendered at 32px", () => {
     expect(FARM_PLANTS_SHEET_PATH).toBe("/assets/farm-plants.png");
     expect({ FARM_PLANTS_SHEET_COLUMNS, FARM_PLANTS_SHEET_ROWS, PLANT_SOURCE_TILE_SIZE, FARM_TILE_SIZE }).toEqual({ FARM_PLANTS_SHEET_COLUMNS: 48, FARM_PLANTS_SHEET_ROWS: 27, PLANT_SOURCE_TILE_SIZE: 16, FARM_TILE_SIZE: 32 });
-    expect(plantSourceRegion(CARROT_PLANT_CELLS.seedling)).toEqual({ sx: 144, sy: 384, size: 16 });
-    expect(plantSourceRegion(CARROT_PLANT_CELLS.mature)).toEqual({ sx: 176, sy: 384, size: 16 });
+    expect(Object.values(CARROT_PLANT_CELLS).map(plantSourceRegion)).toEqual([{ sx: 144, sy: 384, size: 16 }, { sx: 160, sy: 384, size: 16 }, { sx: 176, sy: 384, size: 16 }, { sx: 192, sy: 384, size: 16 }]);
   });
 
   it("uses the supplied farm sheet for grass and cultivated dirt", () => {

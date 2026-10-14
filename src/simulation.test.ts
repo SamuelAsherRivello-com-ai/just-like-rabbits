@@ -10,14 +10,14 @@ describe("habitat simulation", () => {
     expect(plant(state, { x: 8, y: 4 })).toBe(false);
     expect(plant(state, { x: 3, y: 3 })).toBe(false);
   });
-  it("matures each plot after exactly twenty simulation seconds", () => {
+  it("turns each plot into a carrot object after exactly one simulation minute", () => {
     const state = initialState(); plant(state, { x: 2, y: 2 });
     advance(state, GROW_SECONDS - 0.1); expect(counts(state).mature).toBe(0);
     advance(state, 0.1); expect(counts(state).mature).toBe(1);
   });
   it("scales elapsed time consistently", () => {
     const state = initialState(); plant(state, { x: 2, y: 2 }); setTimeScale(state, 2);
-    advance(state, 10); expect(counts(state).mature).toBe(1);
+    advance(state, 30); expect(counts(state).mature).toBe(1);
   });
   it("uses every advertised scale for the same simulation clock", () => {
     for (const scale of TIME_SCALES) {
@@ -38,18 +38,18 @@ describe("habitat simulation", () => {
     }
   });
   it("keeps concurrent plots on independent growth clocks", () => {
-    const state = initialState(); plant(state, { x: 2, y: 2 }); advance(state, 10); plant(state, { x: 3, y: 2 });
-    advance(state, 10); expect(counts(state).mature).toBe(1);
-    advance(state, 10); expect(counts(state).mature).toBe(2);
+    const state = initialState(); state.rabbits = []; plant(state, { x: 2, y: 2 }); advance(state, 30); plant(state, { x: 3, y: 2 });
+    advance(state, 30); expect(counts(state).mature).toBe(1);
+    advance(state, 30); expect(counts(state).mature).toBe(2);
   });
   it("keeps night tint readable and chooses state-driven sprite frames", () => {
     expect(nightTintAlpha(0)).toBeGreaterThan(0); expect(nightTintAlpha(0)).toBeLessThan(0.33);
     expect(rabbitFrame("idle")).toBe(0); expect(rabbitFrame("wander")).toBe(1); expect(rabbitFrame("eatCarrot")).toBe(2);
   });
   it("moves a rabbit to food and abandons an invalid target", () => {
-    const state = initialState(); state.plots = [{ x: 5, y: 5, stage: "mature", plantedAt: 0 }];
+    const state = initialState(); state.carrots = [{ x: 5, y: 5 }];
     const rabbit = state.rabbits[0]!; rabbit.x = 4; rabbit.y = 5; rabbit.state = "seekCarrot"; rabbit.target = { x: 5, y: 5 }; rabbit.stateUntil = 0;
-    advance(state, 2); expect(state.plots).toHaveLength(0); expect(["eatCarrot", "idle"]).toContain(rabbit.state);
+    advance(state, 2); expect(state.carrots).toHaveLength(0); expect(["eatCarrot", "idle"]).toContain(rabbit.state);
     rabbit.state = "seekCarrot"; rabbit.target = { x: 7, y: 7 }; rabbit.stateUntil = state.elapsed; advance(state, 0.2);
     expect(rabbit.state).toBe("wander"); expect(rabbit.target).toBeUndefined();
   });

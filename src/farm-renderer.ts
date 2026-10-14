@@ -14,12 +14,14 @@ export function groundSourceCellForGid(gid: number) {
 }
 
 export function plantSourceCellForGid(gid: number) {
-  if (gid === FARM_PLANT_GID.seedling) return CARROT_PLANT_CELLS.seedling;
-  if (gid === FARM_PLANT_GID.mature) return CARROT_PLANT_CELLS.mature;
+  if (gid === FARM_PLANT_GID.stage0) return CARROT_PLANT_CELLS.stage0;
+  if (gid === FARM_PLANT_GID.stage1) return CARROT_PLANT_CELLS.stage1;
+  if (gid === FARM_PLANT_GID.stage2) return CARROT_PLANT_CELLS.stage2;
+  if (gid === FARM_PLANT_GID.stage3 || gid === FARM_PLANT_GID.carrotObject) return CARROT_PLANT_CELLS.stage3;
   return undefined;
 }
 
-export function drawFarmLayers(context: CanvasRenderingContext2D, map: FarmTiledMap, plantsSheet: HTMLImageElement): void {
+export function drawFarmLayers(context: CanvasRenderingContext2D, map: FarmTiledMap, plantsSheet: HTMLImageElement, carrots: readonly { x: number; y: number }[] = []): void {
   const ground = map.layers[0]!;
   const plants = map.layers[1]!;
   for (let index = 0; index < ground.data.length; index += 1) {
@@ -46,4 +48,5 @@ export function drawFarmLayers(context: CanvasRenderingContext2D, map: FarmTiled
     const y = Math.floor(index / map.width) * FARM_TILE_SIZE;
     context.drawImage(plantsSheet, source.sx, source.sy, source.size, source.size, x, y, FARM_TILE_SIZE, FARM_TILE_SIZE);
   }
+  for (const carrot of carrots) { const source = plantSourceRegion(CARROT_PLANT_CELLS.stage3); context.drawImage(plantsSheet, source.sx, source.sy, source.size, source.size, carrot.x * FARM_TILE_SIZE, carrot.y * FARM_TILE_SIZE, FARM_TILE_SIZE, FARM_TILE_SIZE); }
 }

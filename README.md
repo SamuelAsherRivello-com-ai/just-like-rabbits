@@ -44,11 +44,11 @@ The HUD always shows the planted-plot total and mature-carrot total.
 
 ## Carrot lifecycle
 
-Planting instantly creates a visible seedling. Each plot has its own timestamp and becomes a mature carrot after exactly 20 seconds of simulation time at 1x. Mature carrots remain until a rabbit eats them. Time scale changes affect the remaining growth time without resetting elapsed simulation time.
+Planting instantly cultivates the tile to dirt and creates the first visible carrot frame. Each plot has its own timestamp and advances through four supplied-art frames at 0, 15, 30, and 45 seconds, becoming a harvestable carrot object after exactly 60 seconds of simulation time at 1x. The dirt remains after a rabbit eats the object, ready for replanting. Time scale changes affect remaining growth time without resetting elapsed simulation time.
 
 ## Rabbit behavior
 
-Every session begins with Hazel and Poppy. Each rabbit is an animal, not a player character, and uses these states: `idle`, `wander`, `seekCarrot`, `moveToCarrot`, `eatCarrot`, `hide`, and `rest`.
+Every session begins with Hazel and Poppy plus one to three capacity-adaptive bot rabbits. Each rabbit is an animal, not a player character, and uses these states: `idle`, `wander`, `seekCarrot`, `moveToCarrot`, `eatCarrot`, `hide`, and `rest`.
 
 The fixed-step, seeded rules make choices reproducible. When mature food exists, a rabbit may seek it, move one tile at a time, play its eating frame, and remove the carrot. If a target disappears or cannot be used, it clears that target and returns to another activity instead of retrying forever.
 

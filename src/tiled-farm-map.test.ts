@@ -19,23 +19,22 @@ describe("Tiled farm map", () => {
   });
 
   it("turns a planted cell into dirt and exposes its lifecycle in Plants", () => {
-    const seedling = { x: 1, y: 1, stage: "seedling" as const, plantedAt: 0 };
-    const mature = { x: 2, y: 1, stage: "mature" as const, plantedAt: 0 };
+    const seedling = { x: 1, y: 1, stage: 0 as const, plantedAt: 0 };
+    const mature = { x: 2, y: 1, stage: 3 as const, plantedAt: 0 };
     const map = createFarmTiledMap([seedling, mature]);
     expect(farmTileAt(map, "Ground", 1, 1)).toBe(FARM_GROUND_GID.dirt);
-    expect(farmTileAt(map, "Plants", 1, 1)).toBe(FARM_PLANT_GID.seedling);
-    expect(farmTileAt(map, "Plants", 2, 1)).toBe(FARM_PLANT_GID.mature);
+    expect(farmTileAt(map, "Plants", 1, 1)).toBe(FARM_PLANT_GID.stage0);
+    expect(farmTileAt(map, "Plants", 2, 1)).toBe(FARM_PLANT_GID.stage3);
     expect(farmTileAt(createFarmTiledMap([seedling]), "Plants", 2, 1)).toBe(FARM_PLANT_GID.empty);
   });
 
-  it("renders a simulation-grown carrot as the mature overlay", () => {
+  it("renders a simulation-grown carrot as a separate object above persistent dirt", () => {
     const state = initialState();
     expect(plant(state, { x: 1, y: 1 })).toBe(true);
-    advance(state, 20);
-    const grown = createFarmTiledMap(state.plots);
+    advance(state, 60);
+    const grown = createFarmTiledMap(state.plots, state.cultivated);
     expect(farmTileAt(grown, "Ground", 1, 1)).toBe(FARM_GROUND_GID.dirt);
-    expect(farmTileAt(grown, "Plants", 1, 1)).toBe(FARM_PLANT_GID.mature);
-    state.plots = [];
-    expect(farmTileAt(createFarmTiledMap(state.plots), "Plants", 1, 1)).toBe(FARM_PLANT_GID.empty);
+    expect(farmTileAt(grown, "Plants", 1, 1)).toBe(FARM_PLANT_GID.empty);
+    expect(state.carrots).toEqual([{ x: 1, y: 1 }]);
   });
 });

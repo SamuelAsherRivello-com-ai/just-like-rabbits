@@ -1,16 +1,16 @@
 export const MAP_WIDTH = 18;
 export const MAP_HEIGHT = 12;
-export const GROW_SECONDS = 20;
+export const GROW_SECONDS = 60;
 export const TIME_SCALES = [0.5, 1, 2, 4, 10] as const;
 
 export type TimeScale = (typeof TIME_SCALES)[number];
 export type Terrain = "grass" | "soil" | "path" | "bush" | "water";
-export type PlotStage = "seedling" | "mature";
+export type PlotStage = 0 | 1 | 2 | 3;
 export type RabbitState = "idle" | "wander" | "seekCarrot" | "moveToCarrot" | "eatCarrot" | "hide" | "rest";
 export interface Point { x: number; y: number }
 export interface Plot extends Point { stage: PlotStage; plantedAt: number }
 export interface Rabbit extends Point { id: string; state: RabbitState; target?: Point; stateUntil: number }
-export interface HabitatState { elapsed: number; timeScale: TimeScale; seed: number; plots: Plot[]; rabbits: Rabbit[] }
+export interface HabitatState { elapsed: number; timeScale: TimeScale; seed: number; cultivated: Point[]; plots: Plot[]; carrots: Point[]; rabbits: Rabbit[] }
 
 export function terrainAt({ x, y }: Point): Terrain {
   if (x < 0 || y < 0 || x >= MAP_WIDTH || y >= MAP_HEIGHT) return "water";
@@ -23,7 +23,7 @@ export function terrainAt({ x, y }: Point): Terrain {
 export function initialState(): HabitatState {
   return {
     elapsed: 0, timeScale: 1, seed: 123456,
-    plots: [],
+    cultivated: [], plots: [], carrots: [],
     rabbits: [
       { id: "hazel", x: 5, y: 5, state: "idle", stateUntil: 1.2 },
       { id: "poppy", x: 13, y: 6, state: "wander", stateUntil: 0.8 },
@@ -33,8 +33,9 @@ export function initialState(): HabitatState {
 
 export function plant(state: HabitatState, point: Point): boolean {
   const terrain = terrainAt(point);
-  if ((terrain !== "grass" && terrain !== "soil") || state.plots.some((plot) => plot.x === point.x && plot.y === point.y)) return false;
-  state.plots.push({ ...point, stage: "seedling", plantedAt: state.elapsed });
+  if ((terrain !== "grass" && terrain !== "soil") || state.plots.some((plot) => plot.x === point.x && plot.y === point.y) || state.carrots.some((carrot) => carrot.x === point.x && carrot.y === point.y)) return false;
+  if (!state.cultivated.some((tile) => tile.x === point.x && tile.y === point.y)) state.cultivated.push({ ...point });
+  state.plots.push({ ...point, stage: 0, plantedAt: state.elapsed });
   return true;
 }
 
@@ -46,7 +47,7 @@ function nextRandom(state: HabitatState): number {
 }
 
 function samePoint(a: Point, b: Point): boolean { return a.x === b.x && a.y === b.y; }
-function maturePlots(state: HabitatState): Plot[] { return state.plots.filter((plot) => plot.stage === "mature"); }
+function maturePlots(state: HabitatState): Point[] { return state.carrots; }
 function stepToward(rabbit: Rabbit, target: Point): void {
   if (rabbit.x !== target.x) rabbit.x += Math.sign(target.x - rabbit.x);
   else if (rabbit.y !== target.y) rabbit.y += Math.sign(target.y - rabbit.y);
@@ -76,7 +77,7 @@ function updateRabbit(state: HabitatState, rabbit: Rabbit): void {
   if (rabbit.state === "moveToCarrot" && rabbit.target && state.elapsed >= rabbit.stateUntil) {
     if (!maturePlots(state).some((plot) => samePoint(plot, rabbit.target!))) { delete rabbit.target; rabbit.state = "idle"; rabbit.stateUntil = state.elapsed + 0.5; return; }
     if (samePoint(rabbit, rabbit.target)) {
-      state.plots = state.plots.filter((plot) => !samePoint(plot, rabbit.target!));
+      state.carrots = state.carrots.filter((carrot) => !samePoint(carrot, rabbit.target!));
       rabbit.state = "eatCarrot"; rabbit.stateUntil = state.elapsed + 1.2; return;
     }
     stepToward(rabbit, rabbit.target); rabbit.stateUntil = state.elapsed + 0.28; return;
@@ -91,7 +92,7 @@ export function advance(state: HabitatState, wallSeconds: number): void {
   const end = state.elapsed + Math.max(0, wallSeconds) * state.timeScale;
   while (state.elapsed + 0.1 <= end + 0.00001) {
     state.elapsed = Math.round((state.elapsed + 0.1) * 10) / 10;
-    for (const plot of state.plots) if (plot.stage === "seedling" && state.elapsed - plot.plantedAt >= GROW_SECONDS) plot.stage = "mature";
+    for (const plot of [...state.plots]) { const age = state.elapsed - plot.plantedAt; if (age >= GROW_SECONDS) { state.plots = state.plots.filter((candidate) => candidate !== plot); state.carrots.push({ x: plot.x, y: plot.y }); } else plot.stage = Math.min(3, Math.floor(age / 15)) as PlotStage; }
     for (const rabbit of state.rabbits) updateRabbit(state, rabbit);
   }
 }

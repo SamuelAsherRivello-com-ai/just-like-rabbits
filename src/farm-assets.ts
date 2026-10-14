@@ -16,9 +16,11 @@ export const FARM_GROUND_CELLS: Readonly<{ grass: PlantSourceCell; dirt: PlantSo
 });
 
 /** Selected from the supplied Plants.png crop progression: sprout then carrot root. */
-export const CARROT_PLANT_CELLS: Readonly<{ seedling: PlantSourceCell; mature: PlantSourceCell }> = Object.freeze({
-  seedling: Object.freeze({ column: 9, row: 24 }),
-  mature: Object.freeze({ column: 11, row: 24 }),
+export const CARROT_PLANT_CELLS: Readonly<{ stage0: PlantSourceCell; stage1: PlantSourceCell; stage2: PlantSourceCell; stage3: PlantSourceCell }> = Object.freeze({
+  stage0: Object.freeze({ column: 9, row: 24 }),
+  stage1: Object.freeze({ column: 10, row: 24 }),
+  stage2: Object.freeze({ column: 11, row: 24 }),
+  stage3: Object.freeze({ column: 12, row: 24 }),
 });
 
 export function plantSourceRegion(cell: PlantSourceCell): Readonly<{ sx: number; sy: number; size: number }> {
