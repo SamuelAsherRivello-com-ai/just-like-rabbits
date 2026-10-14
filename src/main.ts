@@ -1,9 +1,15 @@
 import "./style.css";
 import { MultiplayerClient } from "@rmc/multiplayer-client";
 import { clientPointToTile } from "./coordinates";
-import { MAP_HEIGHT, MAP_WIDTH, TIME_SCALES, advance, counts, initialState, nightTintAlpha, plant, rabbitFrame, setTimeScale, terrainAt, type HabitatState, type TimeScale } from "./simulation";
+import { FARM_TILE_SIZE, FARM_PLANTS_SHEET_PATH } from "./farm-assets";
+import { drawFarmLayers } from "./farm-renderer";
+import { createRabbitAnimationEntity, rabbitAnimationDefinitions, rabbitAnimationForState } from "./rabbit-animation-catalog";
+import { MAP_HEIGHT, MAP_WIDTH, TIME_SCALES, advance, counts, initialState, nightTintAlpha, plant, setTimeScale, type HabitatState, type RabbitState, type TimeScale } from "./simulation";
+import type { SpriteSheetAnimationEntity } from "./sprite-sheet-animation-system";
+import { suppliedArtStatus } from "./supplied-art";
+import { createFarmTiledMap } from "./tiled-farm-map";
 
-const TILE = 32;
+const TILE = FARM_TILE_SIZE;
 type HabitatAction = { type: "plant" | "speed"; payload: unknown; sequence: number; sender: string };
 type HabitatTransfer = { state: HabitatState; sequence: number; random: unknown; clock: unknown };
 type HabitatActions = { action: { type: "plant" | "speed"; payload: unknown }; hostSnapshot: { state: HabitatState; random: unknown; clock: unknown } };
@@ -11,8 +17,16 @@ let state: HabitatState = initialState();
 const multiplayer = new MultiplayerClient<{ hostId: string | null; transfer: HabitatTransfer | null }, HabitatActions, HabitatTransfer, HabitatAction>(import.meta.env.VITE_MULTIPLAYER_ENDPOINT ?? "http://127.0.0.1:2567", "just-like-rabbits");
 let lastActionSequence = 0;
 let lastPublishedAt = 0;
-const environmentSheet = new Image(); environmentSheet.src = "/assets/environment-tiles.svg";
-const rabbitSheet = new Image(); rabbitSheet.src = "/assets/rabbit-sprites.svg";
+const artIssues: string[] = [];
+function loadSuppliedImage(path: string): HTMLImageElement {
+  const image = new Image();
+  image.addEventListener("error", () => { if (!artIssues.includes(path)) artIssues.push(path); });
+  image.src = path;
+  return image;
+}
+const farmPlantsSheet = loadSuppliedImage(FARM_PLANTS_SHEET_PATH);
+const rabbitSheets = new Map(rabbitAnimationDefinitions().flatMap((definition) => definition.source.kind === "sheet" ? [[definition.source.path, loadSuppliedImage(definition.source.path)] as const] : []));
+const rabbitAnimations = new Map<string, SpriteSheetAnimationEntity>();
 let paused = false;
 let invalidUntil = 0;
 let lastFrame = performance.now();
@@ -23,11 +37,12 @@ document.querySelector<HTMLDivElement>("#app")!.innerHTML = `
     <div class="stats" aria-live="polite"><span id="planted"></span><span id="mature"></span></div>
     <div class="controls" aria-label="Simulation controls"><label>Time <select id="scale">${TIME_SCALES.map((scale) => `<option value="${scale}">${scale}x</option>`).join("")}</select></label><button id="pause" type="button">Pause local input</button><button id="retry" type="button">Retry room</button></div></header>
     <div class="canvas-wrap"><canvas id="habitat" width="${MAP_WIDTH * TILE}" height="${MAP_HEIGHT * TILE}" aria-label="Rabbit habitat map"></canvas><div id="toast" role="status"></div></div>
-    <footer><span id="connection">Connecting to shared habitat…</span><span>Two autonomous rabbits</span></footer>
+    <footer><span id="connection">Connecting to shared habitat…</span><span id="art-status">Loading supplied farm artwork…</span></footer>
   </section>`;
 
 const canvas = document.querySelector<HTMLCanvasElement>("#habitat")!;
 const context = canvas.getContext("2d")!;
+context.imageSmoothingEnabled = false;
 const planted = document.querySelector<HTMLSpanElement>("#planted")!;
 const mature = document.querySelector<HTMLSpanElement>("#mature")!;
 const toast = document.querySelector<HTMLDivElement>("#toast")!;
@@ -35,6 +50,7 @@ const scale = document.querySelector<HTMLSelectElement>("#scale")!;
 const pauseButton = document.querySelector<HTMLButtonElement>("#pause")!;
 const retryButton = document.querySelector<HTMLButtonElement>("#retry")!;
 const connection = document.querySelector<HTMLSpanElement>("#connection")!;
+const artStatus = document.querySelector<HTMLSpanElement>("#art-status")!;
 
 function isHabitatState(value: unknown): value is HabitatState {
   return Boolean(value) && typeof value === "object" && Array.isArray((value as HabitatState).plots) && Array.isArray((value as HabitatState).rabbits) && typeof (value as HabitatState).elapsed === "number";
@@ -57,29 +73,28 @@ multiplayer.subscribe((shared, event) => {
 });
 void multiplayer.connect();
 
-function fillTile(x: number, y: number, color: string): void { context.fillStyle = color; context.fillRect(x * TILE, y * TILE, TILE, TILE); }
-function drawPlant(x: number, y: number, maturePlot: boolean): void {
-  const cx = x * TILE + TILE / 2; const base = y * TILE + TILE - 5;
-  context.fillStyle = "#2b7b45"; context.fillRect(cx - 3, base - 13, 6, 13); context.fillRect(cx - 9, base - 9, 6, 4); context.fillRect(cx + 3, base - 11, 6, 4);
-  if (maturePlot) { context.fillStyle = "#f6872f"; context.fillRect(cx - 3, base - 4, 6, 9); context.fillStyle = "#ffcc75"; context.fillRect(cx - 2, base - 3, 2, 6); }
-}
 function drawRabbit(x: number, y: number, stateName: string, index: number): void {
   const ox = x * TILE; const oy = y * TILE + (stateName === "moveToCarrot" || stateName === "wander" ? Math.sin(state.elapsed * 14 + index) * 3 : 0);
-  const frame = rabbitFrame(stateName as import("./simulation").RabbitState);
-  if (rabbitSheet.complete && rabbitSheet.naturalWidth > 0) { context.drawImage(rabbitSheet, frame * TILE, 0, TILE, TILE, ox, oy, TILE, TILE); return; }
-  context.fillStyle = index === 0 ? "#f5ead9" : "#cfa47d"; context.beginPath(); context.ellipse(ox + 16, oy + 18, 11, 8, 0, 0, Math.PI * 2); context.fill();
-  context.fillStyle = index === 0 ? "#fff8ed" : "#e7c19a"; context.fillRect(ox + 10, oy + 2, 4, 13); context.fillRect(ox + 18, oy + 2, 4, 13);
-  context.fillStyle = "#4e3840"; context.fillRect(ox + 20, oy + 16, 2, 2); if (stateName === "eatCarrot") { context.fillStyle = "#f6872f"; context.fillRect(ox + 24, oy + 21, 4, 5); }
+  const rabbit = state.rabbits[index]!;
+  let animation = rabbitAnimations.get(rabbit.id);
+  if (!animation) { animation = createRabbitAnimationEntity(); rabbitAnimations.set(rabbit.id, animation); }
+  const animationName = rabbitAnimationForState(stateName as RabbitState);
+  if (animation.getState().animation !== animationName) animation.selectAnimation(animationName);
+  const frame = animation.getState().frame;
+  const sheet = rabbitSheets.get(frame.path);
+  if (sheet?.complete && sheet.naturalWidth > 0 && frame.sheetFrame !== undefined) {
+    context.drawImage(sheet, frame.sheetFrame * frame.widthPx, 0, frame.widthPx, frame.heightPx, ox, oy, TILE, TILE);
+  }
 }
 function render(): void {
-  for (let y = 0; y < MAP_HEIGHT; y += 1) for (let x = 0; x < MAP_WIDTH; x += 1) {
-    const terrain = terrainAt({ x, y });
-    const index = terrain === "grass" ? 0 : terrain === "soil" ? 1 : terrain === "path" ? 2 : terrain === "bush" ? 3 : 4;
-    fillTile(x, y, terrain === "grass" ? ((x + y) % 2 ? "#80bf63" : "#8dc96d") : terrain === "soil" ? "#ad794e" : terrain === "path" ? "#d9b877" : terrain === "bush" ? "#397d45" : "#5da8c1");
-    if (environmentSheet.complete && environmentSheet.naturalWidth > 0) context.drawImage(environmentSheet, index * TILE, 0, TILE, TILE, x * TILE, y * TILE, TILE, TILE);
-    if (terrain === "bush") { context.fillStyle = "#5da151"; context.fillRect(x * TILE + 7, y * TILE + 7, 18, 18); }
+  const artState = suppliedArtStatus([farmPlantsSheet, ...rabbitSheets.values()].map((sheet) => sheet.complete && sheet.naturalWidth > 0), artIssues);
+  if (artState !== "ready") {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    artStatus.textContent = artState === "error" ? "Supplied game artwork failed to load." : "Loading supplied farm artwork…";
+    return;
   }
-  for (const plot of state.plots) { fillTile(plot.x, plot.y, "#94633e"); drawPlant(plot.x, plot.y, plot.stage === "mature"); }
+  artStatus.textContent = "Supplied farm and rabbit artwork loaded";
+  drawFarmLayers(context, createFarmTiledMap(state.plots), farmPlantsSheet);
   for (const [index, rabbit] of state.rabbits.entries()) drawRabbit(rabbit.x, rabbit.y, rabbit.state, index);
   const daylight = nightTintAlpha(state.elapsed);
   context.fillStyle = `rgba(20, 35, 78, ${daylight})`; context.fillRect(0, 0, canvas.width, canvas.height);
@@ -102,6 +117,8 @@ scale.addEventListener("change", () => {
 pauseButton.addEventListener("click", () => { paused = !paused; pauseButton.textContent = paused ? "Resume local input" : "Pause local input"; });
 retryButton.addEventListener("click", () => { void multiplayer.connect(); });
 function frame(now: number): void {
+  const elapsedMs = Math.min(Math.max(0, now - lastFrame), 400);
+  for (const animation of rabbitAnimations.values()) animation.update(elapsedMs);
   const isHost = multiplayer.state.status === "connected" && multiplayer.state.hostId === multiplayer.state.sessionId;
   if (multiplayer.state.status !== "connected" || isHost) advance(state, Math.min((now - lastFrame) / 1000, 0.4));
   if (isHost && now - lastPublishedAt >= 100) { multiplayer.send("hostSnapshot", { state, random: { seed: state.seed }, clock: { time: state.elapsed, speed: state.timeScale } }); lastPublishedAt = now; }

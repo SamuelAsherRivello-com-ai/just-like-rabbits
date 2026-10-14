@@ -54,13 +54,13 @@ The fixed-step, seeded rules make choices reproducible. When mature food exists,
 
 ## Art
 
-The art sources are deliberately small, original, and replaceable:
+All in-world art is copied only from the owner-approved `C:\Users\srive\Desktop\Desktop\Archive Of Tilesets To Copy From` archive. The HUD and controls are project-authored HTML and text:
 
-- Environment tileset: [`public/assets/environment-tiles.svg`](public/assets/environment-tiles.svg)
-- Rabbit-only sprite sheet: [`public/assets/rabbit-sprites.svg`](public/assets/rabbit-sprites.svg)
+- Farm terrain and plant tileset: [`public/assets/farm-plants.png`](public/assets/farm-plants.png)
+- Rabbit animation sheets: [`public/assets/rabbit/`](public/assets/rabbit/)
 - Atlas frame layout, source, and replacement instructions: [`public/assets/ASSETS.md`](public/assets/ASSETS.md)
 
-Both use 32 px frames and are drawn through a pixelated 2D canvas. Replace either atlas without changing rules or state.
+The Tiled-compatible habitat has a 32 × 32 px logical grid: its `Ground` layer supplies grass and cultivated dirt from the farm sheet, and its `Plants` layer draws 16 px farm source cells at 2× for seedling and mature carrot overlays. Rabbit sheets use 32 × 32 px frames and are selected by the presentation-only animation catalog above both layers. The habitat currently plays Idle, Run, CarrotSkill, LieDown, and Sleep; Sitting, Attack, Hurt, and Dead are also registered for later behavior work. Missing required art displays an error instead of old game artwork.
 
 ## Multiplayer status
 
