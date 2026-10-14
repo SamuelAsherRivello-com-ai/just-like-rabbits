@@ -4,9 +4,9 @@ A bright, entirely 2D, straight-down rabbit habitat simulation. Plant carrots an
 
 ## Play online
 
-[Open Just Like Rabbits on Vercel](https://just-like-rabbits.vercel.app)
+[Play Just Like Rabbits on GitHub Pages](https://samuelasherrivello-com-ai.github.io/just-like-rabbits/)
 
-The production build uses the shared `just-like-rabbits` multiplayer service at `https://rmc-colyseus-multiplayer-server.vercel.app`. The Vercel project retains its account deployment protection, so a Vercel-authorized browser is required while that project setting is enabled.
+The public demo uses the shared `just-like-rabbits` multiplayer service at `https://rmc-colyseus-multiplayer-server.vercel.app`.
 
 ## Run locally
 
@@ -64,7 +64,7 @@ The Tiled-compatible habitat has a 32 × 32 px logical grid: its `Ground` layer 
 
 ## Multiplayer status
 
-The game connects to the shared `just-like-rabbits` Colyseus room at `VITE_MULTIPLAYER_ENDPOINT`, defaulting to `http://127.0.0.1:2567` for local development. The elected host publishes simulation snapshots; guests submit ordered planting and time-scale requests, then render the host's state. The checked-in `vendor/rmc-multiplayer-client-0.9.13.tgz` pins the compatible typed client. Copy `.env.example` to `.env.local` to use another public endpoint.
+The game connects to the shared `just-like-rabbits` Colyseus room at `VITE_MULTIPLAYER_ENDPOINT`, defaulting to `http://127.0.0.1:2567` for local development. The server is authoritative: it validates plant and time-scale actions, advances the simulation, and broadcasts snapshots that every browser renders. The checked-in `vendor/rmc-multiplayer-client-0.9.14.tgz` pins the compatible typed client. Copy `.env.example` to `.env.local` to use another public endpoint.
 
 The server is in-memory. A deploy, expiry, route change, or function/session limit can end a room, so the UI reports reconnection/error states and never promises persistence. On the Vercel Hobby deployment path, bounded sessions must remain below the configured function duration; a fresh room is required after expiry. The integration evidence is in [`docs/multiplayer-server-evidence.md`](docs/multiplayer-server-evidence.md).
 
