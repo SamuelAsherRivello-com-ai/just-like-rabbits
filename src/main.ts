@@ -1,22 +1,18 @@
 import "./style.css";
-import { MultiplayerClient } from "@rmc/multiplayer-client";
+import { MultiplayerClient, type JustLikeRabbitsActions, type JustLikeRabbitsState } from "@rmc/multiplayer-client";
 import { clientPointToTile } from "./coordinates";
 import { FARM_TILE_SIZE, FARM_PLANTS_SHEET_PATH } from "./farm-assets";
 import { drawFarmLayers } from "./farm-renderer";
+import { habitatConnectionLabel } from "./habitat-connection";
 import { createRabbitAnimationEntity, rabbitAnimationDefinitions, rabbitAnimationForState } from "./rabbit-animation-catalog";
-import { MAP_HEIGHT, MAP_WIDTH, TIME_SCALES, advance, counts, initialState, nightTintAlpha, plant, setTimeScale, type HabitatState, type RabbitState, type TimeScale } from "./simulation";
+import { MAP_HEIGHT, MAP_WIDTH, TIME_SCALES, counts, initialState, nightTintAlpha, type HabitatState, type RabbitState, type TimeScale } from "./simulation";
 import type { SpriteSheetAnimationEntity } from "./sprite-sheet-animation-system";
 import { suppliedArtStatus } from "./supplied-art";
 import { createFarmTiledMap } from "./tiled-farm-map";
 
 const TILE = FARM_TILE_SIZE;
-type HabitatAction = { type: "plant" | "speed"; payload: unknown; sequence: number; sender: string };
-type HabitatTransfer = { state: HabitatState; sequence: number; random: unknown; clock: unknown };
-type HabitatActions = { action: { type: "plant" | "speed"; payload: unknown }; hostSnapshot: { state: HabitatState; random: unknown; clock: unknown } };
 let state: HabitatState = initialState();
-const multiplayer = new MultiplayerClient<{ hostId: string | null; transfer: HabitatTransfer | null }, HabitatActions, HabitatTransfer, HabitatAction>(import.meta.env.VITE_MULTIPLAYER_ENDPOINT ?? "http://127.0.0.1:2567", "just-like-rabbits");
-let lastActionSequence = 0;
-let lastPublishedAt = 0;
+const multiplayer = new MultiplayerClient<JustLikeRabbitsState, JustLikeRabbitsActions>(import.meta.env.VITE_MULTIPLAYER_ENDPOINT ?? "http://127.0.0.1:2567", "just-like-rabbits");
 const artIssues: string[] = [];
 function loadSuppliedImage(path: string): HTMLImageElement {
   const image = new Image();
@@ -55,21 +51,9 @@ const artStatus = document.querySelector<HTMLSpanElement>("#art-status")!;
 function isHabitatState(value: unknown): value is HabitatState {
   return Boolean(value) && typeof value === "object" && Array.isArray((value as HabitatState).plots) && Array.isArray((value as HabitatState).rabbits) && typeof (value as HabitatState).elapsed === "number";
 }
-function applySharedAction(action: HabitatAction): void {
-  if (action.sequence <= lastActionSequence) return;
-  lastActionSequence = action.sequence;
-  if (action.type === "speed" && TIME_SCALES.includes(action.payload as TimeScale)) setTimeScale(state, action.payload as TimeScale);
-  if (action.type === "plant" && action.payload && typeof action.payload === "object") {
-    const point = action.payload as { x?: unknown; z?: unknown };
-    if (Number.isInteger(point.x) && Number.isInteger(point.z)) plant(state, { x: point.x as number, y: point.z as number });
-  }
-}
-multiplayer.subscribe((shared, event) => {
-  const isHost = shared.hostId !== null && shared.hostId === shared.sessionId;
-  connection.textContent = shared.status === "connected" ? (isHost ? `Connected · hosting ${shared.players.length}/${shared.capacity}` : `Connected · guest ${shared.players.length}/${shared.capacity}`) : shared.status === "full" ? "Shared habitat is full" : shared.status === "reconnecting" ? "Reconnecting to shared habitat…" : shared.status === "error" ? `Shared habitat error: ${shared.error}` : "Connecting to shared habitat…";
-  const transfer = shared.transfer;
-  if (!isHost && transfer && isHabitatState(transfer.state)) state = structuredClone(transfer.state);
-  if (event === "habitatAction" && shared.lastAction && isHost) applySharedAction(shared.lastAction);
+multiplayer.subscribe(shared => {
+  connection.textContent = habitatConnectionLabel(shared.status, shared.players.length, shared.capacity, shared.error, paused);
+  if (shared.gameState && isHabitatState(shared.gameState)) state = structuredClone(shared.gameState);
 });
 void multiplayer.connect();
 
@@ -106,22 +90,20 @@ function pointFromEvent(event: PointerEvent): { x: number; y: number } {
   return clientPointToTile(event.clientX, event.clientY, box);
 }
 canvas.addEventListener("pointerdown", (event) => {
-  if (paused) return; const point = pointFromEvent(event);
+  if (paused) return;
+  const point = pointFromEvent(event);
   if (multiplayer.state.status === "connected") multiplayer.send("action", { type: "plant", payload: { x: point.x, z: point.y } });
-  else if (!plant(state, point)) { invalidUntil = performance.now() + 350; toast.textContent = "That tile cannot be planted."; window.setTimeout(() => { toast.textContent = ""; }, 900); }
+  else { invalidUntil = performance.now() + 350; toast.textContent = "Join the shared habitat before planting."; window.setTimeout(() => { toast.textContent = ""; }, 900); }
 });
 scale.addEventListener("change", () => {
   const value = Number(scale.value) as TimeScale;
-  if (multiplayer.state.status === "connected") multiplayer.send("action", { type: "speed", payload: value }); else setTimeScale(state, value);
+  if (multiplayer.state.status === "connected") multiplayer.send("action", { type: "speed", payload: value });
 });
-pauseButton.addEventListener("click", () => { paused = !paused; pauseButton.textContent = paused ? "Resume local input" : "Pause local input"; });
+pauseButton.addEventListener("click", () => { paused = !paused; pauseButton.textContent = paused ? "Resume local input" : "Pause local input"; connection.textContent = habitatConnectionLabel(multiplayer.state.status, multiplayer.state.players.length, multiplayer.state.capacity, multiplayer.state.error, paused); });
 retryButton.addEventListener("click", () => { void multiplayer.connect(); });
 function frame(now: number): void {
   const elapsedMs = Math.min(Math.max(0, now - lastFrame), 400);
   for (const animation of rabbitAnimations.values()) animation.update(elapsedMs);
-  const isHost = multiplayer.state.status === "connected" && multiplayer.state.hostId === multiplayer.state.sessionId;
-  if (multiplayer.state.status !== "connected" || isHost) advance(state, Math.min((now - lastFrame) / 1000, 0.4));
-  if (isHost && now - lastPublishedAt >= 100) { multiplayer.send("hostSnapshot", { state, random: { seed: state.seed }, clock: { time: state.elapsed, speed: state.timeScale } }); lastPublishedAt = now; }
   lastFrame = now; render(); requestAnimationFrame(frame);
 }
 requestAnimationFrame(frame);

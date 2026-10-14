@@ -25,6 +25,18 @@ describe("habitat simulation", () => {
       expect(state.elapsed).toBe(scale);
     }
   });
+  it("changes every advertised scale without resetting a growing habitat", () => {
+    for (const scale of TIME_SCALES) {
+      const state = initialState();
+      plant(state, { x: 2, y: 2 });
+      advance(state, 2);
+      setTimeScale(state, scale);
+      advance(state, 1);
+      expect(state.elapsed).toBe(2 + scale);
+      expect(counts(state).planted).toBe(1);
+      expect(nightTintAlpha(state.elapsed)).toBeGreaterThan(0);
+    }
+  });
   it("keeps concurrent plots on independent growth clocks", () => {
     const state = initialState(); plant(state, { x: 2, y: 2 }); advance(state, 10); plant(state, { x: 3, y: 2 });
     advance(state, 10); expect(counts(state).mature).toBe(1);
